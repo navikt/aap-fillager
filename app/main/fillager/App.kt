@@ -17,6 +17,8 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import no.nav.aap.ktor.config.loadConfig
 import org.flywaydb.core.Flyway
 import org.slf4j.LoggerFactory
@@ -29,7 +31,7 @@ data class Config(
     val database: DbConfig,
 )
 
-data class DbConfig (
+data class DbConfig(
     val url: String,
     val username: String,
     val password: String
@@ -56,6 +58,8 @@ internal fun Application.server() {
         filter { call -> call.request.path().startsWith("/api") }
     }
 
+    val virusScanClient = VirusScanClient()
+    val pdfGen = PdfGen()
     val datasource = initDatasource(config.database)
     migrate(datasource)
 
@@ -71,6 +75,30 @@ internal fun Application.server() {
 
             get("/ready") {
                 call.respond(HttpStatusCode.OK, "oppgavestyring")
+            }
+        }
+
+        route("/paabegynt") {
+            get {
+                //TODO: Hent navn/filreferanse/innsendingsreferanse på filer vi har nå
+            }
+        }
+
+        route("/{innsendingsreferanse}") {
+            post {
+                withContext(Dispatchers.IO) {
+                    val fil: ByteArray = call.receive<ByteArray>()
+                    if (virusScanClient.scan(fil).result == ScanResult.Result.FOUND) {
+                        call.respond(406, "Virus funnet")
+                    }
+                    pdfGen.bildeTilPfd(fil)
+
+                }
+                //TODO: Lagre
+                //TODO: returner innsendings referanse og filreferanse
+            }
+            get {
+                //TODO: Returner alle relevante file
             }
         }
     }
