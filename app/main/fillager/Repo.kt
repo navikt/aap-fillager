@@ -1,10 +1,8 @@
 package fillager
 
-import org.intellij.lang.annotations.Language
 import java.sql.Timestamp
 import java.util.*
 import javax.sql.DataSource
-import kotliquery.Session
 import kotliquery.queryOf
 import kotliquery.sessionOf
 
@@ -42,14 +40,6 @@ class FilDAO(private val datasource: DataSource) {
                 )
             }
         }
-
-        val preparedStatement = datasource.connection.prepareStatement(insertQuery)
-        preparedStatement.setObject(1, filreferanse)
-        preparedStatement.setString(2, tittel)
-        preparedStatement.setTimestamp(3, Timestamp(Date().time))
-        preparedStatement.setString(4, fil)
-
-        preparedStatement.executeQuery()
     }
 
     fun delete(filreferanse: UUID) {
