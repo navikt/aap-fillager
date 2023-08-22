@@ -1,9 +1,11 @@
 -- give access to IAM users (GCP)
 GRANT ALL ON ALL TABLES IN SCHEMA PUBLIC TO cloudsqliamuser;
 
-CREATE TABLE filopplasting(
-    id              UUID NOT NULL,
-    dato            TIMESTAMP NOT NULL,
-    filreferanse    UUID NOT NULL,
-    fil             BLOB
+CREATE TABLE fil(
+    filreferanse            UUID NOT NULL,
+    tittel                  TEXT NOT NULL,
+    opprettet               TIMESTAMP NOT NULL,
+    fil_base64              TEXT,
+    CONSTRAINT UNIQUE (filreferanse)
 );
+

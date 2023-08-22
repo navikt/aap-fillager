@@ -43,6 +43,7 @@ dependencies {
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("org.flywaydb:flyway-core:9.21.1")
     runtimeOnly("org.postgresql:postgresql:42.6.0")
+    implementation("com.github.seratch:kotliquery:1.9.0")
 
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
@@ -56,7 +57,7 @@ repositories {
 
 tasks {
     withType<KotlinCompile> {
-        kotlinOptions.jvmTarget = "19"
+        kotlinOptions.jvmTarget = "20"
     }
     withType<Test> {
         useJUnitPlatform()

@@ -63,6 +63,7 @@ internal fun Application.server() {
     val datasource = initDatasource(config.database)
     migrate(datasource)
 
+
     routing {
         route("/actuator") {
             get("/metrics") {
@@ -89,7 +90,7 @@ internal fun Application.server() {
                 withContext(Dispatchers.IO) {
                     val fil: ByteArray = call.receive<ByteArray>()
                     if (virusScanClient.scan(fil).result == ScanResult.Result.FOUND) {
-                        call.respond(406, "Virus funnet")
+                        call.respond(406)
                     }
                     pdfGen.bildeTilPfd(fil)
 
