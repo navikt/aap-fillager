@@ -23,6 +23,7 @@ import no.nav.aap.ktor.config.loadConfig
 import org.flywaydb.core.Flyway
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
+import java.util.*
 import javax.sql.DataSource
 
 private val secureLog = LoggerFactory.getLogger("secureLog")
@@ -63,6 +64,8 @@ internal fun Application.server() {
     val datasource = initDatasource(config.database)
     migrate(datasource)
 
+    val repo = Repo(datasource)
+
 
     routing {
         route("/actuator") {
@@ -79,9 +82,27 @@ internal fun Application.server() {
             }
         }
 
-        route("/paabegynt") {
-            get {
-                //TODO: Hent navn/filreferanse/innsendingsreferanse på filer vi har nå
+        route("/fil") {
+            post {
+                withContext(Dispatchers.IO) {
+                    val fil: ByteArray = call.receive<ByteArray>()
+                    if (virusScanClient.scan(fil).result == ScanResult.Result.FOUND) {
+                        call.respond(406)
+                    }
+                    pdfGen.bildeTilPfd(fil)
+                }
+            }
+            get("/{filreferanse}") {
+                withContext(Dispatchers.IO) {
+                    val fil = repo.getEnkeltFil(UUID.fromString(call.parameters["filreferanse"]))
+                    call.respond(fil)
+                }
+            }
+
+            delete("/{filreferanse}") {
+                withContext(Dispatchers.IO) {
+                    repo.slettEnkeltFil(UUID.fromString(call.parameters["filreferanse"]))
+                }
             }
         }
 
@@ -93,19 +114,27 @@ internal fun Application.server() {
                         call.respond(406)
                     }
                     pdfGen.bildeTilPfd(fil)
-
                 }
                 //TODO: Lagre
                 //TODO: returner innsendings referanse og filreferanse
             }
             get {
-                //TODO: Returner alle relevante file
+                withContext(Dispatchers.IO) {
+                    call.respond(repo.getFilerTilhørendeEnInnsending(UUID.fromString(call.parameters["innsendingsreferanse"])))
+                }
+            }
+            delete {
+                withContext(Dispatchers.IO) {
+                    repo.slettInnsendingOgTilhørendeFiler(UUID.fromString(call.parameters["innsendingsreferanse"]))
+                }
             }
         }
+
+
     }
 }
 
-private fun initDatasource(dbConfig: DbConfig) = HikariDataSource(HikariConfig().apply {
+fun initDatasource(dbConfig: DbConfig) = HikariDataSource(HikariConfig().apply {
     jdbcUrl = dbConfig.url
     username = dbConfig.username
     password = dbConfig.password
@@ -117,7 +146,7 @@ private fun initDatasource(dbConfig: DbConfig) = HikariDataSource(HikariConfig()
     maxLifetime = 30001
 })
 
-private fun migrate(dataSource: DataSource) {
+fun migrate(dataSource: DataSource) {
     Flyway
         .configure()
         .cleanDisabled(false) // TODO: husk å skru av denne før prod
