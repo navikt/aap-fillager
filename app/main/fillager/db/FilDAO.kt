@@ -15,7 +15,7 @@ class FilDAO(private val datasource: DataSource) {
 
     private val insertInnsendingQuery = """
                 INSERT INTO innsending VALUES (:innsendingsreferanse, :opprettet)
-                ON CONFLICT ON CONSTRAINT unique_innsendingsreferanse DO UPDATE SET opprettet = :opprettet
+                ON CONFLICT ON CONSTRAINT unique_innsendingsreferanse DO NOTHING
             """
 
     private val selectFilQuery = """
