@@ -1,7 +1,12 @@
 package fillager.db
 
+import fillager.Fil
+import fillager.Innsending
 import fillager.db.InitTestDatabase.dataSource
+import kotliquery.queryOf
+import kotliquery.sessionOf
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import java.lang.RuntimeException
 import java.util.UUID
@@ -15,56 +20,49 @@ internal class FilDAOTest : DatabaseTestBase() {
         val innsendingid = UUID.randomUUID()
         val fysiskFil = "FILINNHOLD".toByteArray()
 
-        filDAO.insertFil(filid, innsendingid, "Tittel", fysiskFil)
+        filDAO.insertFil(filid, fysiskFil)
 
         val fil = filDAO.selectFil(filid)
-        assertEquals(innsendingid, fil?.innsendingsreferanse)
-        assertEquals(String(fysiskFil), String(fil?.fil?:throw RuntimeException()))
+        assertEquals(String(fysiskFil), String(fil ?: throw RuntimeException()))
     }
 
     @Test
-    fun `Lagre fil og hent ut med innsendingsID`(){
+    fun `Lagre fil deretter slett fil`() {
         val filid = UUID.randomUUID()
         val innsendingid = UUID.randomUUID()
         val fysiskFil = "FILINNHOLD".toByteArray()
 
-        filDAO.insertFil(filid, innsendingid, "Tittel", fysiskFil)
-
-        val filer = filDAO.selectInnsending(innsendingid)
-        assertEquals(1,filer.size)
-        assertEquals(filid, filer.first().filreferanse)
-    }
-
-    @Test
-    fun `Lagre fil deretter slett fil`(){
-        val filid = UUID.randomUUID()
-        val innsendingid = UUID.randomUUID()
-        val fysiskFil = "FILINNHOLD".toByteArray()
-
-        filDAO.insertFil(filid, innsendingid, "Tittel", fysiskFil)
+        filDAO.insertFil(filid, fysiskFil)
         filDAO.deleteFil(filid)
 
-        val filer = filDAO.selectInnsending(innsendingid)
-        assertEquals(0,filer.size)
+        val filer = filDAO.selectFil(filid)
+        assertNull(filer)
     }
 
     @Test
-    fun `lagre to filer på samme innsending`(){
+    fun `insert innsending`() {
         val innsendingid = UUID.randomUUID()
         val fysiskFil = "FILINNHOLD".toByteArray()
         val filid = UUID.randomUUID()
         val filid2 = UUID.randomUUID()
 
-        filDAO.insertFil(filid, innsendingid, "Tittel", fysiskFil)
-        filDAO.insertFil(filid2, innsendingid, "Tittel", fysiskFil)
+        filDAO.insertFil(filid, fysiskFil)
+        filDAO.insertFil(filid2, fysiskFil)
 
-        val filer = filDAO.selectInnsending(innsendingid)
-        assertEquals(2,filer.size)
-        assertEquals(filid, filer.first().filreferanse)
+        val innsending = Innsending(
+            innsendingid, listOf(
+                Fil(filid, "tittel1"),
+                Fil(filid2, "tittel2")
+            )
+        )
+        filDAO.insertInnsending(innsending)
+
+        assertEquals("tittel1", queryTittel(filid))
+        assertEquals("tittel2", queryTittel(filid2))
     }
 
     @Test
-    fun `slett en hel innsending`(){
+    /*fun `slett en hel innsending`() {
         val innsendingid = UUID.randomUUID()
         val fysiskFil = "FILINNHOLD".toByteArray()
         val filid = UUID.randomUUID()
@@ -76,7 +74,29 @@ internal class FilDAOTest : DatabaseTestBase() {
         filDAO.deleteInnsending(innsendingid)
 
         val filer = filDAO.selectInnsending(innsendingid)
-        assertEquals(0,filer.size)
+        assertEquals(0, filer.size)
+    }*/
+
+    private fun queryTittel(filreferanse: UUID): String? {
+        return sessionOf(dataSource).use { session ->
+            session.run(
+                queryOf(
+                    "SELECT tittel FROM fil WHERE filreferanse = :filreferanse",
+                    mapOf("filreferanse" to filreferanse)
+                ).map { row -> row.string(1) }.asSingle
+            )
+        }
+    }
+
+    private fun queryCountFiler(innsendingsreferanse: UUID): Int? {
+        return sessionOf(dataSource).use { session ->
+            session.run(
+                queryOf(
+                    "SELECT count(*) FROM innsending_fil WHERE innsendingsreferanse = :innsendingsreferanse",
+                    mapOf("innsendingsreferanse" to innsendingsreferanse)
+                ).map { row -> row.int(1) }.asSingle
+            )
+        }
     }
 
 }

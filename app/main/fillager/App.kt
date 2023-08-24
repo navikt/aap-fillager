@@ -84,15 +84,6 @@ internal fun Application.server() {
         }
 
         route("/fil") {
-            post {
-                withContext(Dispatchers.IO) {
-                    val fil: ByteArray = call.receive<ByteArray>()
-                    if (virusScanClient.scan(fil).result == ScanResult.Result.FOUND) {
-                        call.respond(406)
-                    }
-                    pdfGen.bildeTilPfd(fil)
-                }
-            }
             get("/{filreferanse}") {
                 withContext(Dispatchers.IO) {
                     val fil = repo.getEnkeltFil(UUID.fromString(call.parameters["filreferanse"]))
@@ -114,7 +105,8 @@ internal fun Application.server() {
                     if (virusScanClient.scan(fil).result == ScanResult.Result.FOUND) {
                         call.respond(406)
                     }
-                    pdfGen.bildeTilPfd(fil)
+                    val pdf = pdfGen.bildeTilPfd(fil)
+                    //repo.opprettNyFil(UUID.fromString(call.parameters["innsendingsreferanse"]),"",pdf)
                 }
                 //TODO: Lagre
                 //TODO: returner innsendings referanse og filreferanse

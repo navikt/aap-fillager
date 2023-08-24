@@ -1,6 +1,7 @@
 package fillager.db
 
 import fillager.Fil
+import fillager.Innsending
 import java.util.*
 import javax.sql.DataSource
 import kotlin.collections.List
@@ -16,20 +17,22 @@ class Repo(datasource: DataSource) {
         filDAO.deleteFil(filreferanse)
     }
 
-    fun getEnkeltFil(filreferanse: UUID): Fil {
+    fun getEnkeltFil(filreferanse: UUID): ByteArray {
         return requireNotNull(filDAO.selectFil(filreferanse)){"Fil ikke funnet"}
     }
 
-    fun getFilerTilhørendeEnInnsending(innsendingsreferanse: UUID):List<Fil>{
+    /*fun getFilerTilhørendeEnInnsending(innsendingsreferanse: UUID):List<Fil>{
         return filDAO.selectInnsending(innsendingsreferanse)
+    }*/
+
+    fun opprettNyFil(fil: ByteArray):UUID{
+        val id = UUID.randomUUID()
+        filDAO.insertFil(id, fil)
+        return id
     }
 
-    fun opprettNyFil(filreferanse: UUID, innsendingsreferanse: UUID, tittel: String,fil: ByteArray){
-        filDAO.insertFil(filreferanse,innsendingsreferanse,tittel,fil)
-    }
-
-    fun opprettNyInnsending(innsendingsreferanse: UUID){
-        filDAO.insertInnsending(innsendingsreferanse)
+    fun opprettNyInnsending(innsending: Innsending){
+        filDAO.insertInnsending(innsending)
     }
 
 }
