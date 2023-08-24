@@ -1,40 +1,11 @@
-package fillager
+package fillager.db
 
+import fillager.Fil
+import kotliquery.queryOf
+import kotliquery.sessionOf
 import java.sql.Timestamp
 import java.util.*
 import javax.sql.DataSource
-import kotliquery.queryOf
-import kotliquery.sessionOf
-import kotlin.collections.List
-
-class Repo(datasource: DataSource) {
-    private val filDAO = FilDAO(datasource)
-
-    fun slettInnsendingOgTilhørendeFiler(innsendingsreferanse: UUID) {
-        filDAO.deleteInnsending(innsendingsreferanse)
-    }
-
-    fun slettEnkeltFil(filreferanse: UUID){
-        filDAO.deleteFil(filreferanse)
-    }
-
-    fun getEnkeltFil(filreferanse: UUID):Fil{
-        return requireNotNull(filDAO.selectFil(filreferanse)){"Fil ikke funnet"}
-    }
-
-    fun getFilerTilhørendeEnInnsending(innsendingsreferanse: UUID):List<Fil>{
-        return filDAO.selectInnsending(innsendingsreferanse)
-    }
-
-    fun opprettNyFil(filreferanse: UUID, innsendingsreferanse: UUID, tittel: String,fil: ByteArray){
-        filDAO.insertFil(filreferanse,innsendingsreferanse,tittel,fil)
-    }
-
-    fun opprettNyInnsending(innsendingsreferanse: UUID){
-        filDAO.insertInnsending(innsendingsreferanse)
-    }
-
-}
 
 class FilDAO(private val datasource: DataSource) {
 
@@ -44,6 +15,7 @@ class FilDAO(private val datasource: DataSource) {
 
     private val insertInnsendingQuery = """
                 INSERT INTO innsending VALUES (:innsendingsreferanse, :opprettet)
+                ON CONFLICT ON CONSTRAINT unique_innsendingsreferanse DO UPDATE SET opprettet = :opprettet
             """
 
     private val selectFilQuery = """
@@ -77,6 +49,8 @@ class FilDAO(private val datasource: DataSource) {
     }
 
     fun insertFil(filreferanse: UUID, innsendingsreferanse: UUID, tittel: String, fil: ByteArray) {
+        insertInnsending(innsendingsreferanse)
+
         sessionOf(datasource).use { session ->
             session.transaction { tSession ->
                 tSession.run(
