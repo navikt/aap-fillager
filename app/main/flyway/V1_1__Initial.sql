@@ -8,12 +8,6 @@ CREATE TABLE innsending
     CONSTRAINT unique_innsendingsreferanse UNIQUE (innsendingsreferanse)
 );
 
-CREATE TABLE innsending_fil
-(
-    filreferanse            UUID REFERENCES fil (filreferanse) ON DELETE CASCADE,
-    innsendingsreferanse    UUID REFERENCES innsending (innsendingsreferanse)
-);
-
 CREATE TABLE fil
 (
     filreferanse         UUID,
@@ -21,6 +15,12 @@ CREATE TABLE fil
     opprettet            TIMESTAMP NOT NULL,
     fil                  BYTEA,
     CONSTRAINT unique_filreferanse UNIQUE (filreferanse)
+);
+
+CREATE TABLE innsending_fil
+(
+    filreferanse            UUID REFERENCES fil (filreferanse) ON DELETE CASCADE,
+    innsendingsreferanse    UUID REFERENCES innsending (innsendingsreferanse)
 );
 
 

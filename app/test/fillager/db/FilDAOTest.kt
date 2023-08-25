@@ -3,13 +3,10 @@ package fillager.db
 import fillager.Fil
 import fillager.Innsending
 import fillager.db.InitTestDatabase.dataSource
-import kotliquery.queryOf
-import kotliquery.sessionOf
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
-import java.lang.RuntimeException
-import java.util.UUID
+import java.util.*
 
 internal class FilDAOTest : DatabaseTestBase() {
     private val filDAO = FilDAO(dataSource)
@@ -61,8 +58,8 @@ internal class FilDAOTest : DatabaseTestBase() {
         assertEquals("tittel2", queryTittel(filid2))
     }
 
-    @Test
-    /*fun `slett en hel innsending`() {
+    /*@Test
+    fun `slett en hel innsending`() {
         val innsendingid = UUID.randomUUID()
         val fysiskFil = "FILINNHOLD".toByteArray()
         val filid = UUID.randomUUID()
@@ -78,25 +75,31 @@ internal class FilDAOTest : DatabaseTestBase() {
     }*/
 
     private fun queryTittel(filreferanse: UUID): String? {
-        return sessionOf(dataSource).use { session ->
-            session.run(
-                queryOf(
-                    "SELECT tittel FROM fil WHERE filreferanse = :filreferanse",
-                    mapOf("filreferanse" to filreferanse)
-                ).map { row -> row.string(1) }.asSingle
-            )
+        return dataSource.connection.use { connection ->
+            connection.prepareStatement("SELECT tittel FROM fil WHERE filreferanse = ?").use { preparedStatement ->
+                preparedStatement.setObject(1, filreferanse)
+
+                val resultSet = preparedStatement.executeQuery()
+
+                resultSet.map { row ->
+                    row.getString("tittel")
+                }.singleOrNull()
+            }
         }
     }
 
     private fun queryCountFiler(innsendingsreferanse: UUID): Int? {
-        return sessionOf(dataSource).use { session ->
-            session.run(
-                queryOf(
-                    "SELECT count(*) FROM innsending_fil WHERE innsendingsreferanse = :innsendingsreferanse",
-                    mapOf("innsendingsreferanse" to innsendingsreferanse)
-                ).map { row -> row.int(1) }.asSingle
-            )
+        return dataSource.connection.use { connection ->
+            connection.prepareStatement("SELECT count(*) FROM innsending_fil WHERE innsendingsreferanse = ?")
+                .use { preparedStatement ->
+                    preparedStatement.setObject(1, innsendingsreferanse)
+
+                    val resultSet = preparedStatement.executeQuery()
+
+                    resultSet.map { row ->
+                        row.getInt(1)
+                    }.singleOrNull()
+                }
         }
     }
-
 }

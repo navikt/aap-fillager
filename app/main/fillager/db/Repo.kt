@@ -21,9 +21,9 @@ class Repo(datasource: DataSource) {
         return requireNotNull(filDAO.selectFil(filreferanse)){"Fil ikke funnet"}
     }
 
-    /*fun getFilerTilhørendeEnInnsending(innsendingsreferanse: UUID):List<Fil>{
-        return filDAO.selectInnsending(innsendingsreferanse)
-    }*/
+    fun getFilerTilhørendeEnInnsending(innsendingsreferanse: UUID):List<Fil>{
+        return emptyList() //FIXME filDAO.selectInnsending(innsendingsreferanse)
+    }
 
     fun opprettNyFil(fil: ByteArray):UUID{
         val id = UUID.randomUUID()

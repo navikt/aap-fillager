@@ -2,8 +2,6 @@ package fillager.db
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import kotliquery.queryOf
-import kotliquery.sessionOf
 import org.flywaydb.core.Flyway
 import org.junit.jupiter.api.BeforeEach
 import org.testcontainers.containers.PostgreSQLContainer
@@ -36,10 +34,10 @@ internal object InitTestDatabase {
 internal abstract class DatabaseTestBase {
     @BeforeEach
     fun clearTables() {
-        sessionOf(InitTestDatabase.dataSource).use { session ->
-            session.execute(
-                queryOf(" TRUNCATE fil, innsending")
-            )
+        InitTestDatabase.dataSource.connection.use { connection ->
+            connection.prepareStatement("TRUNCATE innsending_fil, fil, innsending").use { preparedStatement ->
+                preparedStatement.execute()
+            }
         }
     }
 }
