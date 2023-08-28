@@ -41,3 +41,8 @@ spec:
     path: /actuator/metrics
   secureLogs:
     enabled: true
+  accessPolicy:
+    inbound:
+      rules:
+        - application: arkivar
+        - application: innsending
