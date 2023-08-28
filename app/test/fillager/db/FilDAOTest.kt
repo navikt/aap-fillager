@@ -14,7 +14,6 @@ internal class FilDAOTest : DatabaseTestBase() {
     @Test
     fun `Lagre en fil og gjør et oppslag`() {
         val filid = UUID.randomUUID()
-        val innsendingid = UUID.randomUUID()
         val fysiskFil = "FILINNHOLD".toByteArray()
 
         filDAO.insertFil(filid, fysiskFil)
@@ -26,7 +25,6 @@ internal class FilDAOTest : DatabaseTestBase() {
     @Test
     fun `Lagre fil deretter slett fil`() {
         val filid = UUID.randomUUID()
-        val innsendingid = UUID.randomUUID()
         val fysiskFil = "FILINNHOLD".toByteArray()
 
         filDAO.insertFil(filid, fysiskFil)
