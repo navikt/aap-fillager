@@ -1,7 +1,7 @@
 package fillager.db
 
-import fillager.Fil
-import fillager.Innsending
+import fillager.domene.Fil
+import fillager.domene.Innsending
 import java.util.*
 import javax.sql.DataSource
 import kotlin.collections.List

@@ -1,12 +1,14 @@
 package fillager
 
-import com.auth0.jwk.JwkProvider
-import com.auth0.jwk.JwkProviderBuilder
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import fillager.db.Repo
+import fillager.domene.Innsending
+import fillager.filhandtering.PdfGen
+import fillager.filhandtering.ScanResult
+import fillager.filhandtering.VirusScanClient
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
@@ -22,13 +24,11 @@ import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import no.nav.aap.ktor.client.AzureConfig
 import no.nav.aap.ktor.config.loadConfig
 import org.flywaydb.core.Flyway
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.util.*
-import java.util.concurrent.TimeUnit
 import javax.sql.DataSource
 
 private val secureLog = LoggerFactory.getLogger("secureLog")

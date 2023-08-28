@@ -1,4 +1,4 @@
-package fillager
+package fillager.filhandtering
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
@@ -13,12 +13,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 import io.prometheus.client.Summary
-import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
-import java.awt.geom.AffineTransform
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import javax.imageio.ImageIO
 
 private const val PDFGEN_CLIENT_SECONDS_METRICNAME = "PDFGEN_client_seconds"
 private val secureLog = LoggerFactory.getLogger("secureLog")

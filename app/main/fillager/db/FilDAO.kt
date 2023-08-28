@@ -1,6 +1,6 @@
 package fillager.db
 
-import fillager.Innsending
+import fillager.domene.Innsending
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.*

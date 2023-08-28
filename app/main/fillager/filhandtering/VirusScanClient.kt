@@ -1,4 +1,4 @@
-package fillager
+package fillager.filhandtering
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.DeserializationFeature
@@ -14,7 +14,6 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 import io.prometheus.client.Summary
-import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 
 private const val CLAMAV_CLIENT_SECONDS_METRICNAME = "CLAMAV_client_seconds"

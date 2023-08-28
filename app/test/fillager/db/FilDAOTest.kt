@@ -1,7 +1,7 @@
 package fillager.db
 
-import fillager.Fil
-import fillager.Innsending
+import fillager.domene.Fil
+import fillager.domene.Innsending
 import fillager.db.InitTestDatabase.dataSource
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
