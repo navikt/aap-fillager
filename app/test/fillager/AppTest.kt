@@ -1,4 +1,0 @@
-package fillager
-
-class AppTest {
-}
