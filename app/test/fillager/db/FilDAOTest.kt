@@ -54,25 +54,35 @@ internal class FilDAOTest : DatabaseTestBase() {
         )
         filDAO.insertInnsending(innsending)
 
+        assertEquals(1, queryCountInnsending())
+        assertEquals(2,queryCountInnsendingFiler(innsendingid))
         assertEquals("tittel1", queryTittel(filid))
         assertEquals("tittel2", queryTittel(filid2))
     }
 
-    /*@Test
+    @Test
     fun `slett en hel innsending`() {
         val innsendingid = UUID.randomUUID()
         val fysiskFil = "FILINNHOLD".toByteArray()
         val filid = UUID.randomUUID()
         val filid2 = UUID.randomUUID()
 
-        filDAO.insertFil(filid, innsendingid, "Tittel", fysiskFil)
-        filDAO.insertFil(filid2, innsendingid, "Tittel", fysiskFil)
+        filDAO.insertFil(filid, fysiskFil)
+        filDAO.insertFil(filid2, fysiskFil)
 
+        val innsending = Innsending(
+            innsendingid, listOf(
+                Fil(filid, "tittel1"),
+                Fil(filid2, "tittel2")
+            )
+        )
+
+        filDAO.insertInnsending(innsending)
         filDAO.deleteInnsending(innsendingid)
-
-        val filer = filDAO.selectInnsending(innsendingid)
-        assertEquals(0, filer.size)
-    }*/
+        assertEquals(0, queryCountInnsending())
+        assertEquals(0,queryCountFiler())
+        assertEquals(0,queryCountInnsendingFiler(innsendingid))
+    }
 
     private fun queryTittel(filreferanse: UUID): String? {
         return dataSource.connection.use { connection ->
@@ -88,11 +98,38 @@ internal class FilDAOTest : DatabaseTestBase() {
         }
     }
 
-    private fun queryCountFiler(innsendingsreferanse: UUID): Int? {
+    private fun queryCountInnsendingFiler(innsendingsreferanse: UUID): Int? {
         return dataSource.connection.use { connection ->
             connection.prepareStatement("SELECT count(*) FROM innsending_fil WHERE innsendingsreferanse = ?")
                 .use { preparedStatement ->
                     preparedStatement.setObject(1, innsendingsreferanse)
+
+                    val resultSet = preparedStatement.executeQuery()
+
+                    resultSet.map { row ->
+                        row.getInt(1)
+                    }.singleOrNull()
+                }
+        }
+    }
+
+    private fun queryCountFiler(): Int? {
+        return dataSource.connection.use { connection ->
+            connection.prepareStatement("SELECT count(*) FROM fil")
+                .use { preparedStatement ->
+
+                    val resultSet = preparedStatement.executeQuery()
+
+                    resultSet.map { row ->
+                        row.getInt(1)
+                    }.singleOrNull()
+                }
+        }
+    }
+    private fun queryCountInnsending(): Int? {
+        return dataSource.connection.use { connection ->
+            connection.prepareStatement("SELECT count(*) FROM innsending")
+                .use { preparedStatement ->
 
                     val resultSet = preparedStatement.executeQuery()
 

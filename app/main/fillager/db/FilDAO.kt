@@ -32,12 +32,15 @@ class FilDAO(private val datasource: DataSource) {
     private val deleteInnsendingQuery = """
                 DELETE FROM innsending WHERE innsendingsreferanse = ? 
             """
+
     private val deleteInnsendingFilQuery = """
-                DELETE FROM innsending_fil WHERE innsendingsreferanse = :innsendingsreferanse
+                DELETE FROM fil WHERE filreferanse IN (SELECT filreferanse FROM innsending_fil WHERE innsendingsreferanse = ?)
             """
+
     private val insertInnsendingFil = """
                 INSERT INTO innsending_fil VALUES (?, ?)
             """
+
     private val updateFilTittel = """
                 UPDATE fil SET tittel = ? WHERE filreferanse = ? 
             """
@@ -92,12 +95,18 @@ class FilDAO(private val datasource: DataSource) {
     }
 
     fun deleteInnsending(innsendingsreferanse: UUID) {
-        datasource.connection.use { connection ->
+        datasource.connection.transaction { connection ->
+            connection.prepareStatement(deleteInnsendingFilQuery).use { preparedStatement ->
+                preparedStatement.setObject(1,innsendingsreferanse)
+                preparedStatement.execute()
+            }
+
             connection.prepareStatement(deleteInnsendingQuery).use { preparedStatement ->
                 preparedStatement.setObject(1, innsendingsreferanse)
 
                 preparedStatement.execute()
             }
+
         }
     }
 

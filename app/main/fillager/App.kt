@@ -1,5 +1,7 @@
 package fillager
 
+import com.auth0.jwk.JwkProvider
+import com.auth0.jwk.JwkProviderBuilder
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.zaxxer.hikari.HikariConfig
@@ -20,11 +22,13 @@ import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import no.nav.aap.ktor.client.AzureConfig
 import no.nav.aap.ktor.config.loadConfig
 import org.flywaydb.core.Flyway
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.util.*
+import java.util.concurrent.TimeUnit
 import javax.sql.DataSource
 
 private val secureLog = LoggerFactory.getLogger("secureLog")
@@ -59,7 +63,7 @@ internal fun Application.server() {
         logger = secureLog
         filter { call -> call.request.path().startsWith("/api") }
     }
-
+    //TODO: Autentisering?
     val virusScanClient = VirusScanClient()
     val pdfGen = PdfGen()
     val datasource = initDatasource(config.database)
@@ -84,6 +88,18 @@ internal fun Application.server() {
         }
 
         route("/fil") {
+            post {
+                withContext(Dispatchers.IO) {
+                    val fil = call.receive<ByteArray>()
+                    if (virusScanClient.scan(fil).result == ScanResult.Result.FOUND) {
+                        call.respond(HttpStatusCode.NotAcceptable,"Fant virus i fil")
+                    }
+                    val pdf = pdfGen.bildeTilPfd(fil)
+                    val filreferanse = repo.opprettNyFil(pdf)
+                    call.respond(HttpStatusCode.Created,filreferanse)
+                }
+            }
+
             get("/{filreferanse}") {
                 withContext(Dispatchers.IO) {
                     val fil = repo.getEnkeltFil(UUID.fromString(call.parameters["filreferanse"]))
@@ -101,15 +117,10 @@ internal fun Application.server() {
         route("/{innsendingsreferanse}") {
             post {
                 withContext(Dispatchers.IO) {
-                    val fil: ByteArray = call.receive<ByteArray>()
-                    if (virusScanClient.scan(fil).result == ScanResult.Result.FOUND) {
-                        call.respond(406)
-                    }
-                    val pdf = pdfGen.bildeTilPfd(fil)
-                    //repo.opprettNyFil(UUID.fromString(call.parameters["innsendingsreferanse"]),"",pdf)
+                    val innsending = call.receive<Innsending>()
+                    repo.opprettNyInnsending(innsending)
+                    call.respond(HttpStatusCode.Created)
                 }
-                //TODO: Lagre
-                //TODO: returner innsendings referanse og filreferanse
             }
             get {
                 withContext(Dispatchers.IO) {
