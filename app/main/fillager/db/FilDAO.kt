@@ -1,6 +1,9 @@
 package fillager.db
 
 import fillager.domene.Innsending
+import java.sql.Connection
+import java.sql.PreparedStatement
+import java.sql.ResultSet
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.*
@@ -46,67 +49,67 @@ class FilDAO(private val datasource: DataSource) {
             """
 
     fun insertInnsending(innsending: Innsending) {
-        datasource.connection.transaction { connection ->
-            connection.prepareStatement(insertInnsendingQuery).use { preparedStatement ->
-                preparedStatement.setObject(1, innsending.innsendingsreferanse)
-                preparedStatement.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()))
-
-                preparedStatement.execute()
+        datasource.transaction {
+            prepareExecuteStatement(insertInnsendingQuery) {
+                setParams {
+                    setUUID(1, innsending.innsendingsreferanse)
+                    setTimestamp(2, LocalDateTime.now())
+                }
             }
 
             innsending.filer.forEach { fil ->
-                connection.prepareStatement(insertInnsendingFil).use { preparedStatement ->
-                    preparedStatement.setObject(1, fil.filreferanse)
-                    preparedStatement.setObject(2, innsending.innsendingsreferanse)
-
-                    preparedStatement.execute()
+                prepareExecuteStatement(insertInnsendingFil) {
+                    setParams {
+                        setUUID(1, fil.filreferanse)
+                        setUUID(2, innsending.innsendingsreferanse)
+                    }
                 }
 
-                connection.prepareStatement(updateFilTittel).use { preparedStatement ->
-                    preparedStatement.setString(1, fil.tittel)
-                    preparedStatement.setObject(2, fil.filreferanse)
-
-                    preparedStatement.execute()
+                prepareExecuteStatement(updateFilTittel) {
+                    setParams {
+                        setString(1, fil.tittel)
+                        setUUID(2, fil.filreferanse)
+                    }
                 }
             }
         }
     }
 
     fun insertFil(filreferanse: UUID, fil: ByteArray) {
-        datasource.connection.use { connection ->
-            connection.prepareStatement(insertFilQuery).use { preparedStatement ->
-                preparedStatement.setObject(1, filreferanse)
-                preparedStatement.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()))
-                preparedStatement.setBytes(3, fil)
-
-                preparedStatement.execute()
+        datasource.connect {
+            prepareExecuteStatement(insertFilQuery) {
+                setParams {
+                    setUUID(1, filreferanse)
+                    setTimestamp(2, LocalDateTime.now())
+                    setBytes(3, fil)
+                }
             }
         }
     }
 
     fun deleteFil(filreferanse: UUID) {
-        datasource.connection.use { connection ->
-            connection.prepareStatement(deleteFilQuery).use { preparedStatement ->
-                preparedStatement.setObject(1, filreferanse)
-
-                preparedStatement.execute()
+        datasource.connect {
+            prepareExecuteStatement(deleteFilQuery) {
+                setParams {
+                    setUUID(1, filreferanse)
+                }
             }
         }
     }
 
     fun deleteInnsending(innsendingsreferanse: UUID) {
-        datasource.connection.transaction { connection ->
-            connection.prepareStatement(deleteInnsendingFilQuery).use { preparedStatement ->
-                preparedStatement.setObject(1,innsendingsreferanse)
-                preparedStatement.execute()
+        datasource.transaction {
+            prepareExecuteStatement(deleteInnsendingFilQuery) {
+                setParams {
+                    setUUID(1, innsendingsreferanse)
+                }
             }
 
-            connection.prepareStatement(deleteInnsendingQuery).use { preparedStatement ->
-                preparedStatement.setObject(1, innsendingsreferanse)
-
-                preparedStatement.execute()
+            prepareExecuteStatement(deleteInnsendingQuery) {
+                setParams {
+                    setUUID(1, innsendingsreferanse)
+                }
             }
-
         }
     }
 
@@ -124,16 +127,125 @@ class FilDAO(private val datasource: DataSource) {
     }*///TODO: hvordan returnerer vi mange filer uten å streame
 
     fun selectFil(filreferanse: UUID): ByteArray? {
-        return datasource.connection.use { connection ->
-            connection.prepareStatement(selectFilQuery).use { preparedStatement ->
-                preparedStatement.setObject(1, filreferanse)
-
-                val resultSet = preparedStatement.executeQuery()
-
-                resultSet.map { row ->
-                    row.getBytes("fil")
-                }.singleOrNull()
+        return datasource.connect {
+            prepareQueryStatement(selectFilQuery) {
+                setParams {
+                    setUUID(1, filreferanse)
+                }
+                setRowMapper {
+                    getBytes("fil")
+                }
+                setResultMapper { result ->
+                    result.singleOrNull()
+                }
             }
+        }
+    }
+
+    private fun <T> DataSource.connect(block: DbConnection.() -> T): T {
+        return this.connection.use { connection ->
+            DbConnection(connection).block()
+        }
+    }
+
+    private fun <T> DataSource.transaction(block: DbConnection.() -> T): T {
+        return this.connection.use { connection ->
+            try {
+                connection.autoCommit = false
+                val result = DbConnection(connection).block()
+                connection.commit()
+                result
+            } catch (e: Throwable) {
+                connection.rollback()
+                throw e
+            } finally {
+                connection.autoCommit = true
+            }
+        }
+    }
+
+    private class DbConnection(private val connection: Connection) {
+        fun <T : Any, R> prepareQueryStatement(
+            query: String,
+            block: PreparedQueryStatement<T, R>.() -> Unit
+        ): R {
+            return this.connection.prepareStatement(query).use { preparedStatement ->
+                val preparedQueryStatement = PreparedQueryStatement<T, R>(preparedStatement)
+                preparedQueryStatement.block()
+                preparedQueryStatement.executeQuery()
+            }
+        }
+
+        fun prepareExecuteStatement(
+            query: String,
+            block: PreparedExecuteStatement.() -> Unit
+        ) {
+            return this.connection.prepareStatement(query).use { preparedStatement ->
+                val myPreparedStatement = PreparedExecuteStatement(preparedStatement)
+                myPreparedStatement.block()
+                myPreparedStatement.execute()
+            }
+        }
+    }
+
+    private class PreparedQueryStatement<T : Any, R>(private val preparedStatement: PreparedStatement) {
+        private lateinit var rowMapper: Row.() -> T
+        private lateinit var resultMapper: (Sequence<T>) -> R
+
+        fun setParams(block: Params.() -> Unit) {
+            Params(preparedStatement).block()
+        }
+
+        fun setRowMapper(block: Row.() -> T) {
+            rowMapper = block
+        }
+
+        fun setResultMapper(block: (result: Sequence<T>) -> R) {
+            resultMapper = block
+        }
+
+        fun executeQuery(): R {
+            val resultSet = preparedStatement.executeQuery()
+            return resultSet
+                .map { currentResultSet ->
+                    Row(currentResultSet).rowMapper()
+                }
+                .let(resultMapper)
+
+        }
+    }
+
+    private class PreparedExecuteStatement(private val preparedStatement: PreparedStatement) {
+        fun setParams(block: Params.() -> Unit) {
+            Params(preparedStatement).block()
+        }
+
+        fun execute() {
+            preparedStatement.execute()
+        }
+    }
+
+    private class Params(private val preparedStatement: PreparedStatement) {
+        fun setBytes(index: Int, bytes: ByteArray) {
+            preparedStatement.setBytes(index, bytes)
+        }
+
+        fun setString(index: Int, value: String) {
+            preparedStatement.setString(index, value)
+        }
+
+        fun setTimestamp(index: Int, localDateTime: LocalDateTime) {
+            preparedStatement.setTimestamp(index, Timestamp.valueOf(localDateTime))
+        }
+
+        fun setUUID(index: Int, uuid: UUID) {
+            preparedStatement.setObject(index, uuid)
+        }
+    }
+
+    private class Row(private val resultSet: ResultSet) {
+        fun getBytes(columnLabel: String): ByteArray {
+            return resultSet.getBytes(columnLabel)
         }
     }
 
