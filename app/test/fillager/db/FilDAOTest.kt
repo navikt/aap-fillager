@@ -59,6 +59,74 @@ internal class FilDAOTest : DatabaseTestBase() {
     }
 
     @Test
+    fun `test oppdatering av innsending`(){
+        val innsendingid = UUID.randomUUID()
+        val fysiskFil = "FILINNHOLD".toByteArray()
+        val filid = UUID.randomUUID()
+        val filid2 = UUID.randomUUID()
+
+        filDAO.insertFil(filid, fysiskFil)
+
+        val innsending = Innsending(
+            innsendingid,
+            listOf(
+                Fil(filid, "tittel1"),
+            )
+        )
+        filDAO.insertInnsending(innsending)
+
+        assertEquals(1, queryCountInnsending())
+        assertEquals(1,queryCountInnsendingFiler(innsendingid))
+
+
+        filDAO.insertFil(filid2, fysiskFil)
+
+        val innsendingoppdatering = Innsending(
+            innsendingid,
+            listOf(
+                Fil(filid2, "tittel1"),
+            )
+        )
+
+        filDAO.updateInnsendingFil(innsendingoppdatering)
+
+        assertEquals(1, queryCountInnsending())
+        assertEquals(2,queryCountInnsendingFiler(innsendingid))
+    }
+
+    @Test
+    fun `test at det ikke blir duplikater i innsending_fil`(){
+        val innsendingid = UUID.randomUUID()
+        val fysiskFil = "FILINNHOLD".toByteArray()
+        val filid = UUID.randomUUID()
+        val filid2 = UUID.randomUUID()
+
+        filDAO.insertFil(filid, fysiskFil)
+
+        val innsending = Innsending(
+            innsendingid,
+            listOf(
+                Fil(filid, "tittel1"),
+            )
+        )
+        filDAO.insertInnsending(innsending)
+        filDAO.insertFil(filid2, fysiskFil)
+
+        val innsendingoppdatering = Innsending(
+            innsendingid,
+            listOf(
+                Fil(filid, "tittel1"),
+                Fil(filid2, "tittel1"),
+            )
+        )
+
+        filDAO.updateInnsendingFil(innsendingoppdatering)
+
+        assertEquals(1, queryCountInnsending())
+        assertEquals(2,queryCountInnsendingFiler(innsendingid))
+    }
+
+    @Test
     fun `slett en hel innsending`() {
         val innsendingid = UUID.randomUUID()
         val fysiskFil = "FILINNHOLD".toByteArray()

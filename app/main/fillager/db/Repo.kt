@@ -35,5 +35,9 @@ class Repo(datasource: DataSource) {
         filDAO.insertInnsending(innsending)
     }
 
+    fun oppdaterInnsending(innsending: Innsending){
+        filDAO.updateInnsendingFil(innsending)
+    }
+
 }
 
