@@ -130,7 +130,7 @@ internal fun Application.server() {
             }
         }
 
-        route("/{innsendingsreferanse}") {
+        route("/innsending") {
             post {
                 withContext(Dispatchers.IO) {
                     val innsending = call.receive<Innsending>()
@@ -138,12 +138,12 @@ internal fun Application.server() {
                     call.respond(HttpStatusCode.Created)
                 }
             }
-            get {
+            get("/{innsendingsreferanse}") {
                 withContext(Dispatchers.IO) {
                     call.respond(repo.getFilerTilhørendeEnInnsending(UUID.fromString(call.parameters["innsendingsreferanse"])))
                 }
             }
-            delete {
+            delete("/{innsendingsreferanse}") {
                 withContext(Dispatchers.IO) {
                     repo.slettInnsendingOgTilhørendeFiler(UUID.fromString(call.parameters["innsendingsreferanse"]))
                 }
