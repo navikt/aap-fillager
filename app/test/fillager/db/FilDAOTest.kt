@@ -88,7 +88,7 @@ internal class FilDAOTest : DatabaseTestBase() {
             )
         )
 
-        filDAO.updateInnsendingFil(innsendingoppdatering)
+        filDAO.insertInnsendingFil(innsendingoppdatering)
 
         assertEquals(1, queryCountInnsending())
         assertEquals(2,queryCountInnsendingFiler(innsendingid))
@@ -120,7 +120,7 @@ internal class FilDAOTest : DatabaseTestBase() {
             )
         )
 
-        filDAO.updateInnsendingFil(innsendingoppdatering)
+        filDAO.insertInnsendingFil(innsendingoppdatering)
 
         assertEquals(1, queryCountInnsending())
         assertEquals(2,queryCountInnsendingFiler(innsendingid))

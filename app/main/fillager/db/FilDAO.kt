@@ -41,7 +41,8 @@ class FilDAO(private val datasource: DataSource) {
             """
 
     private val insertInnsendingFil = """
-                INSERT INTO innsending_fil VALUES (?, ?)
+                INSERT INTO innsending_fil VALUES (?, ?) 
+                ON CONFLICT ON CONSTRAINT unique_innsending_fil DO NOTHING
             """
 
     private val updateFilTittel = """
@@ -69,6 +70,19 @@ class FilDAO(private val datasource: DataSource) {
                     setParams {
                         setString(1, fil.tittel)
                         setUUID(2, fil.filreferanse)
+                    }
+                }
+            }
+        }
+    }
+
+    fun insertInnsendingFil(innsending: Innsending){
+        datasource.transaction {
+            innsending.filer.forEach { fil ->
+                prepareExecuteStatement(insertInnsendingFil) {
+                    setParams {
+                        setUUID(1, fil.filreferanse)
+                        setUUID(2, innsending.innsendingsreferanse)
                     }
                 }
             }
