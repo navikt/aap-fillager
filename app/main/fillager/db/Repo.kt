@@ -1,6 +1,7 @@
 package fillager.db
 
 import fillager.domene.Fil
+import fillager.domene.FilDTO
 import fillager.domene.Innsending
 import java.util.*
 import javax.sql.DataSource
@@ -21,8 +22,8 @@ class Repo(datasource: DataSource) {
         return requireNotNull(filDAO.selectFil(filreferanse)){"Fil ikke funnet"}
     }
 
-    fun getFilerTilhørendeEnInnsending(innsendingsreferanse: UUID):List<Fil>{
-        return emptyList() //FIXME filDAO.selectInnsending(innsendingsreferanse)
+    fun getFilerTilhørendeEnInnsending(innsendingsreferanse: UUID):List<FilDTO>{
+        return filDAO.selectInnsending(innsendingsreferanse)
     }
 
     fun opprettNyFil(fil: ByteArray):UUID{

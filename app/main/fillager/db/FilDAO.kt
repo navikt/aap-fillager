@@ -1,5 +1,6 @@
 package fillager.db
 
+import fillager.domene.FilDTO
 import fillager.domene.Innsending
 import java.sql.Connection
 import java.sql.PreparedStatement
@@ -76,7 +77,7 @@ class FilDAO(private val datasource: DataSource) {
         }
     }
 
-    fun insertInnsendingFil(innsending: Innsending){
+    fun insertInnsendingFil(innsending: Innsending) {
         datasource.transaction {
             innsending.filer.forEach { fil ->
                 prepareExecuteStatement(insertInnsendingFil) {
@@ -127,18 +128,25 @@ class FilDAO(private val datasource: DataSource) {
         }
     }
 
-    /*fun selectInnsending(innsendingsreferanse: UUID): List<Fil> {
-        return sessionOf(datasource).use { session ->
-            session.run(
-                queryOf(
-                    selectInnsendingQuery, mapOf("innsendingsreferanse" to innsendingsreferanse)
-                ).map { row ->
-                    Fil(row.bytes(5)
-                    )
-                }.asList
-            )
+    fun selectInnsending(innsendingsreferanse: UUID): List<FilDTO> {
+        datasource.connection.use {
+            val prepareStatement = datasource.connection.prepareStatement(selectInnsendingQuery)
+
+            prepareStatement.setObject(1, innsendingsreferanse)
+
+            val resultSet = prepareStatement.executeQuery()
+
+            return resultSet.map { row ->
+                FilDTO(
+                    filreferanse = row.getObject("filreferanse", UUID::class.java),
+                    tittel = row.getString("tittel"),
+                    opprettet = row.getObject("opprettet", Timestamp::class.java).toLocalDateTime(),
+                    fil = Base64.getEncoder().encodeToString(row.getBytes("fil"))
+                )
+            }.toList()
         }
-    }*///TODO: hvordan returnerer vi mange filer uten å streame
+    }
+
 
     fun selectFil(filreferanse: UUID): ByteArray? {
         return datasource.connect {
@@ -263,21 +271,5 @@ class FilDAO(private val datasource: DataSource) {
         }
     }
 
-//    fun selectInnsending(innsendingsreferanse: UUID): List<Fil> {
-//        val prepareStatement = datasource.connection.prepareStatement(selectInnsendingQuery)
-//
-//        prepareStatement.setObject(1, innsendingsreferanse)
-//
-//        val resultSet = prepareStatement.executeQuery()
-//
-//        return resultSet.map { row ->
-//            Fil(
-//                row.getObject(1, UUID::class.java),
-//                row.getObject(2, UUID::class.java),
-//                row.getString(3),
-//                row.getTimestamp(4),
-//                row.getBytes(5)
-//            )
-//        }
-//    }
+
 }

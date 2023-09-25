@@ -17,6 +17,7 @@ import io.ktor.server.metrics.micrometer.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.callloging.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -32,6 +33,7 @@ import java.util.*
 import javax.sql.DataSource
 
 private val secureLog = LoggerFactory.getLogger("secureLog")
+private val logger = LoggerFactory.getLogger("App")
 
 data class Config(
     val database: DbConfig,
@@ -51,6 +53,13 @@ internal fun Application.server() {
     val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
     val config = loadConfig<Config>()
 
+    install(StatusPages) {
+        exception<Throwable> { call, cause ->
+            logger.error("Uhåndtert feil", cause)
+            call.respondText(text = "Feil i tjeneste: ${cause.message}" , status = HttpStatusCode.InternalServerError)
+        }
+    }
+
     install(MicrometerMetrics) { registry = prometheus }
     install(ContentNegotiation) {
         jackson {
@@ -61,6 +70,13 @@ internal fun Application.server() {
     install(CallLogging) {
         level = Level.INFO
         logger = secureLog
+        format { call ->
+            val status = call.response.status()
+            val httpMethod = call.request.httpMethod.value
+            val userAgent = call.request.headers["User-Agent"]
+            val callId = call.request.header("x-callId") ?: call.request.header("nav-callId") ?: "ukjent"
+            "Status: $status, HTTP method: $httpMethod, User agent: $userAgent, callId: $callId"
+        }
         filter { call -> call.request.path().startsWith("/api") }
     }
     //TODO: Autentisering?
