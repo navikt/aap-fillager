@@ -110,6 +110,7 @@ internal fun Application.server() {
                     if (virusScanClient.scan(fil).result == ScanResult.Result.FOUND) {
                         call.respond(HttpStatusCode.NotAcceptable,"Fant virus i fil")
                     }
+                    // TODO: SKal alle filtyper behandles som bilde?
                     val pdf = pdfGen.bildeTilPfd(fil)
                     val filreferanse = repo.opprettNyFil(pdf)
                     call.respond(HttpStatusCode.Created,filreferanse)
