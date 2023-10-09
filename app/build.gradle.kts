@@ -42,7 +42,7 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
 
     implementation("com.zaxxer:HikariCP:5.0.1")
-    implementation("org.flywaydb:flyway-core:9.21.1")
+    implementation("org.flywaydb:flyway-core:9.22.2")
     runtimeOnly("org.postgresql:postgresql:42.6.0")
 
     testImplementation(kotlin("test"))
