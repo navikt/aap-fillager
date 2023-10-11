@@ -35,7 +35,7 @@ dependencies {
     implementation("io.ktor:ktor-client-jackson:$ktorVersion")
     implementation("io.ktor:ktor-client-logging:$ktorVersion")
 
-    implementation("io.micrometer:micrometer-registry-prometheus:1.11.2")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.11.5")
     implementation("ch.qos.logback:logback-classic:1.4.11")
     runtimeOnly("net.logstash.logback:logstash-logback-encoder:7.4")
 
