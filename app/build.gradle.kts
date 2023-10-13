@@ -39,7 +39,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.4.11")
     runtimeOnly("net.logstash.logback:logstash-logback-encoder:7.4")
 
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.3")
 
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("org.flywaydb:flyway-core:9.22.3")
